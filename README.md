@@ -53,16 +53,24 @@ Download the environment that matches your operation system, then place the file
 - [__Mac OSX__](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis.app.zip)
 - [__Windows (32-bit)__](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Windows_x86.zip)
 - [__Windows (64-bit)__](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Windows_x86_64.zip)  
-- [__GPU version (e.g. for AWS)__](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Linux_NoVis.zip)  
-
+- [__GPU version (e.g. for AWS)__](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Linux_NoVis.zip)
 Please note, that GPU version on AWS will only work if virtual screen is not enabled (you will not be able to watch the agent). 
 If you would to do so, please follow the instructions in this [link](https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Training-on-Amazon-Web-Service.md)
 and then download the environment for the Linux operating system above.  
 	
-4.		 Create an [IPython kernel](http://ipython.readthedocs.io/en/stable/install/kernel_install.html) for the `name` environment.  
+4. Create an [IPython kernel](http://ipython.readthedocs.io/en/stable/install/kernel_install.html) for the `name` environment.  
 ```bash
 python -m ipykernel install --user --name name --display-name "name"
-```
+````
 
 5. Before running code in a notebook, change the kernel to match the `name` environment by using the drop-down `Kernel` menu. 
   
+## Setup of repository
+Apart from the `Readme.md` and the `requirements.txt` file this repository consists of the following files:
+
+1. `agent.py`: Agent and ReplayBuffer classes with all required functions
+2. `model.py`: Actor and Critc Network classes
+3. `run.py`: Script which will train the agent. Can be run directly from the terminal.
+4. `report.ipynb`: As an alternative to the `run.py` script this Jupyter Notebook has a step-by-step structure. Here the learning algorithm is described in detail
+5. `checkpoint_actor.pth`: Contains the weights of a successful Actor Network
+6. `checkpoint_critic.pth`: Contains the weights of a successful Critic Network
