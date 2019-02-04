@@ -48,6 +48,7 @@ def ddpg(env, brain_name,
     
     scores = []
     scores_window = deque(maxlen=100)
+    best_score = -np.Inf
     for e in range(1, n_episodes+1):
         env_info = env.reset(train_mode=True)[brain_name]
         state = env_info.vector_observations
@@ -74,31 +75,36 @@ def ddpg(env, brain_name,
         print('\rEpisode {}\tAverage Score: {:.2f}\tCurrent Score: {:.2f}'.format(e, np.mean(scores_window), max_score), end="")
         if e % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(e, np.mean(scores_window)))
-        if np.mean(scores_window)>=0.5:
-            print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(e-100, np.mean(scores_window)))
+        if np.mean(scores_window) > best_score:
             torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
             torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
+            best_score = np.mean(scores_window)
+        if np.mean(scores_window)>=0.5:
+            print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(e-100, np.mean(scores_window)))
             break
     return scores
 
 def apply(env, brain_name, 
-          agent, filepath_actor, 
-          filepath_critic):
+          agent, n_agents,
+          filepath_actor, filepath_critic, 
+          n_games=1):
     load_checkpoints(agent, filepath_actor, filepath_critic)
-    env_info = env.reset(train_mode=False)[brain_name]
-    state = env_info.vector_observations[0]
-    score = 0
-    while True:
-        action = agent.act(state, add_noise=False)
-        env_info = env.step(action)[brain_name]
-        next_state = env_info.vector_observations[0]
-        reward = env_info.rewards[0]
-        done = env_info.local_done[0]
-        score += reward
-        state = next_state
-        if done:
-            break
-    print('Score: {}'.format(score))
+    for _ in range(n_games):
+        env_info = env.reset(train_mode=False)[brain_name]
+        state = env_info.vector_observations
+        agent.reset()
+        score = np.zeros(n_agents)
+        while True:
+            action = agent.act(state, add_noise=False)
+            env_info = env.step(action)[brain_name]
+            next_state = env_info.vector_observations
+            reward = env_info.rewards
+            done = env_info.local_done
+            score += reward
+            state = next_state
+            if np.any(done):
+                break
+        print('Score: {}'.format(np.max(score)))
     
 def plot_scores(scores_dict):
     fig = plt.figure()
@@ -121,12 +127,12 @@ if __name__ == '__main__':
     # Hyperparameters
     N = 10000
     BUFFER_SIZE = int(1e6)
-    BATCH_SIZE = 512
+    BATCH_SIZE = 256
     GAMMA = .99
     TAU = 1e-3
-    LEARNING_RATE_ACTOR = 5e-4
-    LEARNING_RATE_CRITIC = 5e-3
-    WEIGHT_DECAY = 0.0
+    LEARNING_RATE_ACTOR = 1e-4
+    LEARNING_RATE_CRITIC = 1e-3
+    WEIGHT_DECAY = 0.000#2
     UPDATE_LOCAL = 10
     N_UPDATES = 5
     SEED = 2
@@ -143,13 +149,14 @@ if __name__ == '__main__':
                   n_updates=N_UPDATES, random_seed=SEED)
     
     # Train agent
-    scores = ddpg(env, brain_name, agent, n_agents, n_episodes=N)
+    #scores = ddpg(env, brain_name, agent, n_agents, n_episodes=N)
     
-    plot_scores({'DDPG': scores})
+    #plot_scores({'DDPG': scores})
     
     # Watching a smart agent
     apply(env, brain_name, 
-          agent, 'checkpoint_actor.pth', 
-          'checkpoint_critic.pth')
+          agent, n_agents,
+          'checkpoint_actor.pth', 'checkpoint_critic.pth', 
+          n_games=10)
     
     env.close()
