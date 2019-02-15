@@ -39,11 +39,11 @@ To set up your python environment to run the code in this repository, follow the
 	activate name
 	```
 
-2. Clone the repository and navigate to the folder.  Then, install the dependencies in the `requirements.txt` file.
+2. Clone the repository and navigate to the folder.  Then, install the dependencies in the `python` folder.
 ```bash
 git clone https://github.com/clauszitzelsberger/tennis-rl.git
-cd tennis-rl
-pip install pip install -r requirements.txt
+cd tennis-rl/python
+pip install .
 ```
 
 3. Download the Unity Environment
