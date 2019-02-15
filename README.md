@@ -66,7 +66,7 @@ python -m ipykernel install --user --name name --display-name "name"
 5. Before running code in a notebook, change the kernel to match the `name` environment by using the drop-down `Kernel` menu. 
   
 ## Setup of repository
-Apart from the `Readme.md` and the `requirements.txt` file this repository consists of the following files:
+Apart from the `Readme.md` file this repository consists of the following files:
 
 1. `agent.py`: Agent and ReplayBuffer classes with all required functions
 2. `model.py`: Actor and Critc Network classes
