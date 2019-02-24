@@ -10,7 +10,7 @@ from agent import Agent
 
 def initialize_env(unity_file):
     # Initialize the environment
-    env = UnityEnvironment(file_name=unity_file, worker_id=2)
+    env = UnityEnvironment(file_name=unity_file)
 
     # Get default brain
     brain_name = env.brain_names[0]
@@ -32,9 +32,9 @@ def initialize_env(unity_file):
 
 
 
-def ddpg(env, brain_name,
+def maddpg(env, brain_name,
          agent, n_agents,
-         n_episodes=2000, t_max=3000):
+         n_episodes=2000, t_max=2000):
     """Deep Determinitic Policy Gradient.
 
     Params
@@ -52,11 +52,19 @@ def ddpg(env, brain_name,
     for e in range(1, n_episodes+1):
         env_info = env.reset(train_mode=True)[brain_name]
         state = env_info.vector_observations
-        agent.reset()
+        #agent.reset()
         score = np.zeros(n_agents)
         #for _ in range(1, t_max):
         while True:
-            action = agent.act(state)
+            #action = agent.act(state)
+            if e < 1200:
+                action = np.random.randn(2, 2) 
+                action = np.clip(action, -1, 1)
+            elif e < 1200*1.75 and np.random.randint(1, 10) <= 5:
+                action = np.random.randn(2, 2) 
+                action = np.clip(action, -1, 1)
+            else:
+                action = agent.act(state)
             env_info = env.step(action)[brain_name]
             next_state = env_info.vector_observations
             reward = env_info.rewards
@@ -76,8 +84,8 @@ def ddpg(env, brain_name,
         if e % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(e, np.mean(scores_window)))
         if np.mean(scores_window) > best_score:
-            torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
-            torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
+            torch.save(agent.actor_local[0].state_dict(), 'checkpoint_actor.pth')
+            torch.save(agent.critic_local[0].state_dict(), 'checkpoint_critic.pth')
             best_score = np.mean(scores_window)
         if np.mean(scores_window)>=0.5:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(e-100, np.mean(scores_window)))
@@ -125,33 +133,33 @@ def load_checkpoints(agent, filepath_actor, filepath_critic):
 
 if __name__ == '__main__':
     # Hyperparameters
-    N = 10000
+    N = 4000
     BUFFER_SIZE = int(1e6)
     BATCH_SIZE = 256
     GAMMA = .99
-    TAU = 1e-3
+    TAU = 1e-1
     LEARNING_RATE_ACTOR = 1e-4
     LEARNING_RATE_CRITIC = 1e-3
     WEIGHT_DECAY = 0.000#2
     UPDATE_LOCAL = 10
-    N_UPDATES = 5
-    SEED = 2
+    N_UPDATES = 1
+    SEED = 10
     
     env, brain_name, state_size, action_size, n_agents = \
         initialize_env('Tennis_Linux/Tennis.x86_64')
 
     # Initialize agent
     agent = Agent(state_size, action_size,
-                  n_agents, buffer_size=BUFFER_SIZE, 
+                  buffer_size=BUFFER_SIZE, 
                   batch_size=BATCH_SIZE, gamma=GAMMA, tau=TAU,
                   lr_a=LEARNING_RATE_ACTOR, lr_c=LEARNING_RATE_CRITIC,
                   weight_decay=WEIGHT_DECAY, update_local=UPDATE_LOCAL,
                   n_updates=N_UPDATES, random_seed=SEED)
     
     # Train agent
-    #scores = ddpg(env, brain_name, agent, n_agents, n_episodes=N)
+    scores = maddpg(env, brain_name, agent, n_agents, n_episodes=N)
     
-    #plot_scores({'DDPG': scores})
+    plot_scores({'MADDPG': scores})
     
     # Watching a smart agent
     apply(env, brain_name, 
