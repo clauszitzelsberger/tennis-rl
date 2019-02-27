@@ -10,7 +10,7 @@ from agent import Agent
 
 def initialize_env(unity_file):
     # Initialize the environment
-    env = UnityEnvironment(file_name=unity_file)
+    env = UnityEnvironment(file_name=unity_file, worker_id=3)
 
     # Get default brain
     brain_name = env.brain_names[0]
@@ -28,13 +28,9 @@ def initialize_env(unity_file):
     
     return env, brain_name, state_size, action_size, n_agents
 
-
-
-
-
-def maddpg(env, brain_name,
+def ddpg(env, brain_name,
          agent, n_agents,
-         n_episodes=2000, t_max=2000):
+         n_episodes=2000, t_max=3000):
     """Deep Determinitic Policy Gradient.
 
     Params
@@ -52,24 +48,17 @@ def maddpg(env, brain_name,
     for e in range(1, n_episodes+1):
         env_info = env.reset(train_mode=True)[brain_name]
         state = env_info.vector_observations
-        #agent.reset()
+        agent.reset()
         score = np.zeros(n_agents)
         #for _ in range(1, t_max):
         while True:
-            #action = agent.act(state)
-            if e < 1200:
-                action = np.random.randn(2, 2) 
-                action = np.clip(action, -1, 1)
-            elif e < 1200*1.75 and np.random.randint(1, 10) <= 5:
-                action = np.random.randn(2, 2) 
-                action = np.clip(action, -1, 1)
-            else:
-                action = agent.act(state)
+            action = agent.act(state)
             env_info = env.step(action)[brain_name]
             next_state = env_info.vector_observations
             reward = env_info.rewards
             done = env_info.local_done
-            agent.step(state, action, reward, next_state, done)
+            agent.step(state[0], action[0], reward[0], next_state[0], done[0], learn=True)
+            agent.step(state[1], action[1], reward[1], next_state[1], done[1], learn=False)
             score += reward
             state = next_state
             if np.any(done):
@@ -84,8 +73,8 @@ def maddpg(env, brain_name,
         if e % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(e, np.mean(scores_window)))
         if np.mean(scores_window) > best_score:
-            torch.save(agent.actor_local[0].state_dict(), 'checkpoint_actor.pth')
-            torch.save(agent.critic_local[0].state_dict(), 'checkpoint_critic.pth')
+            torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
+            torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
             best_score = np.mean(scores_window)
         if np.mean(scores_window)>=0.5:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(e-100, np.mean(scores_window)))
@@ -133,33 +122,33 @@ def load_checkpoints(agent, filepath_actor, filepath_critic):
 
 if __name__ == '__main__':
     # Hyperparameters
-    N = 4000
-    BUFFER_SIZE = int(1e6)
-    BATCH_SIZE = 256
+    N = 10000
+    BUFFER_SIZE = int(1e5)
+    BATCH_SIZE = 128
     GAMMA = .99
-    TAU = 1e-1
+    TAU = 1e-2
     LEARNING_RATE_ACTOR = 1e-4
     LEARNING_RATE_CRITIC = 1e-3
-    WEIGHT_DECAY = 0.000#2
-    UPDATE_LOCAL = 10
+    WEIGHT_DECAY = 0.0
+    UPDATE_LOCAL = 1
     N_UPDATES = 1
-    SEED = 10
-    
+    SEED = 40
+
     env, brain_name, state_size, action_size, n_agents = \
-        initialize_env('Tennis_Linux/Tennis.x86_64')
+        initialize_env("/data/Tennis_Linux_NoVis/Tennis")
 
     # Initialize agent
     agent = Agent(state_size, action_size,
-                  buffer_size=BUFFER_SIZE, 
+                  n_agents, buffer_size=BUFFER_SIZE, 
                   batch_size=BATCH_SIZE, gamma=GAMMA, tau=TAU,
                   lr_a=LEARNING_RATE_ACTOR, lr_c=LEARNING_RATE_CRITIC,
                   weight_decay=WEIGHT_DECAY, update_local=UPDATE_LOCAL,
                   n_updates=N_UPDATES, random_seed=SEED)
-    
+
     # Train agent
-    scores = maddpg(env, brain_name, agent, n_agents, n_episodes=N)
-    
-    plot_scores({'MADDPG': scores})
+    scores = ddpg(env, brain_name, agent, n_agents, n_episodes=N)
+
+    plot_scores({'DDPG': scores})
     
     # Watching a smart agent
     apply(env, brain_name, 
